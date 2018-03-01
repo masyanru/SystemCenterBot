@@ -1,108 +1,114 @@
 {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "siteName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the web app that you wish to create."
-      }
-    },
-    "hostingPlanName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the App Service plan to use for hosting the web app."
-      }
-    },
-    "sku": {
-      "type": "string",
-      "allowedValues": [
-        "F1",
-        "D1",
-        "B1",
-        "B2",
-        "B3",
-        "S1",
-        "S2",
-        "S3",
-        "P1",
-        "P2",
-        "P3",
-        "P4"
-      ],
-      "defaultValue": "S1",
-      "metadata": {
-        "description": "The pricing tier for the hosting plan."
-      }
-    },
-    "workerSize": {
-      "type": "string",
-      "allowedValues": [
-        "0",
-        "1",
-        "2"
-      ],
-      "defaultValue": "0",
-      "metadata": {
-        "description": "The instance size of the hosting plan (small, medium, or large)."
-      }
-    },
-    "repoURL": {
+   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+   "contentVersion": "1.0.0.0",
+   "parameters": {
+      "hostingPlanName": {
+         "type": "string",
+         "minLength": 1,
+         "metadata": {
+            "description": "Name of the hosting plan to use in Azure."
+         }
+      },
+      "webSiteName": {
+         "type": "string",
+         "minLength": 1,
+         "metadata": {
+            "description": "Name of the Azure Web app to create."
+         }
+      },
+      "skuName": {
+         "type": "string",
+         "defaultValue": "F1",
+         "allowedValues": [
+            "F1",
+            "D1",
+            "B1",
+            "B2",
+            "B3",
+            "S1",
+            "S2",
+            "S3",
+            "P1",
+            "P2",
+            "P3",
+            "P4"
+         ],
+         "metadata": {
+            "description": "Describes plan's pricing tier and instance size. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+         }
+      },
+      "skuCapacity": {
+         "type": "int",
+         "defaultValue": 1,
+         "minValue": 1,
+         "metadata": {
+            "description": "Describes plan's instance count"
+         }
+      },
+      "repoURL": {
       "type": "string",
       "defaultValue": "https://github.com/miguelgrinberg/microblog.git",
       "metadata": {
         "description": "The URL for the GitHub repository that contains the project to deploy."
       }
-    },
-    "branch": {
-      "type": "string",
-      "defaultValue": "master",
-      "metadata": {
-        "description": "The branch of the GitHub repository to use."
-      }
-    }
-  },
-  "resources": [
-    {
-      "apiVersion": "2015-08-01",
-      "name": "[parameters('hostingPlanName')]",
-      "type": "Microsoft.Web/serverfarms",
-      "location": "[resourceGroup().location]",
-      "sku": {
-        "name": "[parameters('sku')]",
-        "capacity": "[parameters('workerSize')]"
+     },
+      "branch": {
+         "type": "string",
+         "defaultValue": "master",
+         "metadata": {
+           "description": "The branch of the GitHub repository to use."
+         }
+       }
       },
-      "properties": {
-        "name": "[parameters('hostingPlanName')]"
-      }
-    },
-    {
-      "apiVersion": "2015-08-01",
-      "name": "[parameters('siteName')]",
-      "type": "Microsoft.Web/sites",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
-      ],
-      "properties": {
-        "serverFarmId": "[parameters('hostingPlanName')]"
+   "resources": [
+      {
+         "apiVersion": "2015-08-01",
+         "name": "[parameters('hostingPlanName')]",
+         "type": "Microsoft.Web/serverfarms",
+         "location": "[resourceGroup().location]",
+         "tags": {
+            "displayName": "HostingPlan"
+         },
+         "sku": {
+            "name": "[parameters('skuName')]",
+            "capacity": "[parameters('skuCapacity')]"
+         },
+         "properties": {
+            "name": "[parameters('hostingPlanName')]"
+         }
       },
-      "resources": [
-        {
-          "apiVersion": "2015-08-01",
-          "name": "web",
-          "type": "sourcecontrols",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/Sites', parameters('siteName'))]"
-          ],
-          "properties": {
-            "pythonVersion": "3.4",
-            "RepoUrl": "[parameters('repoURL')]",
-            "branch": "[parameters('branch')]",
-            "IsManualIntegration": true            
-          }
-        }
-      ]
-    }
-  ]
+      {
+         "apiVersion": "2015-08-01",
+         "name": "[parameters('webSiteName')]",
+         "type": "Microsoft.Web/sites",
+         "location": "[resourceGroup().location]",
+         "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "Resource",
+            "displayName": "Website"
+         },
+         "dependsOn": [
+            "[concat('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+         ],
+         "properties": {
+            "name": "[parameters('webSiteName')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+         },
+         "resources": [
+            {
+               "apiVersion": "2015-08-01",
+               "name": "web",
+               "type": "config",
+               "dependsOn": [
+                  "[concat('Microsoft.Web/sites/', parameters('webSiteName'))]"
+               ],
+               "properties": {
+                  "pythonVersion": "3.4",
+                  "RepoUrl": "[parameters('repoURL')]",
+                  "branch": "[parameters('branch')]",
+                  "IsManualIntegration": true  
+               }
+            }
+         ]
+      }
+   ]
 }
