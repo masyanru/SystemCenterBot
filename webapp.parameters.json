@@ -3,10 +3,10 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "siteName": {
-      "value": "rmbbotwebapp1"
+      "value": "rmbbotwebapp2"
     },
     "hostingPlanName": {
-      "value": "rmbbotwebapp1"
+      "value": "rmbbotwebapp2"
     }
   }
 }
